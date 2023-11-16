@@ -346,6 +346,26 @@ TEST_CASE("context")
         REQUIRE(data->findPath("/example-schema:leafInt8")->asTerm().valueStr() == "-43");
     }
 
+    DOCTEST_SUBCASE("Context::findXpathAtoms success")
+    {
+        ctx->parseModule(example_schema, libyang::SchemaFormat::YANG);
+        auto data = ctx->parseData(TESTS_DIR / "test_data.json", libyang::DataFormat::JSON);
+        REQUIRE(data);
+        auto atoms = ctx->findXpathAtoms("/example-schema:leafInt8", 0);
+        REQUIRE(atoms.size() == 1);
+
+        atoms = ctx->findXpathAtoms("/example-schema:invalid_xpath", 0);
+        REQUIRE(atoms.size() == 0);
+    }
+
+    DOCTEST_SUBCASE("Context::findXpathAtoms failure")
+    {
+        ctx->parseModule(example_schema, libyang::SchemaFormat::YANG);
+        auto data = ctx->parseData(TESTS_DIR / "test_data.json", libyang::DataFormat::JSON);
+        REQUIRE(data);
+        REQUIRE_THROWS_AS(ctx->findXpathAtoms("", 0), std::runtime_error);
+    }
+
     DOCTEST_SUBCASE("Log level")
     {
         REQUIRE(libyang::setLogLevel(libyang::LogLevel::Error) == libyang::LogLevel::Debug);

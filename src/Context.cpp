@@ -375,6 +375,19 @@ Set<SchemaNode> Context::findXPath(const std::string& path) const
 }
 
 /**
+ * @brief Get all the schema nodes that are required for xpath to be evaluated (atoms).
+ *
+ * Wraps `lys_find_xpath_atoms`.
+ */
+Set<SchemaNode> Context::findXpathAtoms(const std::string& xpath, uint32_t options) const {
+    ly_set* set;
+    auto err = lys_find_xpath_atoms(m_ctx.get(), nullptr, xpath.c_str(), options, &set);
+    throwIfError(err, "Context::findXpathAtoms: couldn't find atoms with xpath '"s + xpath + "'");
+
+    return Set<SchemaNode>{set, m_ctx};
+}
+
+/**
  * @brief Retrieves module from the context.
  *
  * @param name Name of the wanted module.
