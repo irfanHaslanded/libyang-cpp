@@ -16,10 +16,10 @@ using namespace std::string_literals;
 namespace libyang::impl {
 std::optional<DataNode> newPath(lyd_node* node, ly_ctx* ctx, std::shared_ptr<internal_refcount> refs, const std::string& path, const std::optional<std::string>& value, const std::optional<CreationOptions> options)
 {
-    lyd_node* out;
+    lyd_node* out = NULL;
     auto err = lyd_new_path(node, ctx, path.c_str(), value ? value->c_str() : nullptr, options ? utils::toCreationOptions(*options) : 0, &out);
 
-    throwIfError(err, "Couldn't create a node with path '"s + path + "'");
+    throwIfError2(node && node->schema ? node->schema->module->ctx : ctx, err, "Couldn't create a node with path '"s + path + "'");
 
     if (out) {
         return DataNode{out, refs};
@@ -30,11 +30,11 @@ std::optional<DataNode> newPath(lyd_node* node, ly_ctx* ctx, std::shared_ptr<int
 
 CreatedNodes newPath2(lyd_node* node, ly_ctx* ctx, std::shared_ptr<internal_refcount> refs, const std::string& path, const void* value, const AnydataValueType valueType, const std::optional<CreationOptions> options)
 {
-    lyd_node* newParent;
-    lyd_node* newNode;
+    lyd_node* newParent = NULL;
+    lyd_node* newNode = NULL;
     auto err = lyd_new_path2(node, ctx, path.c_str(), value, 0, utils::toAnydataValueType(valueType), options ? utils::toCreationOptions(*options) : 0, &newParent, &newNode);
 
-    throwIfError(err, "Couldn't create a node with path '"s + path + "'");
+    throwIfError2(node && node->schema ? node->schema->module->ctx : ctx, err, "Couldn't create a node with path '"s + path + "'");
 
     return {
         .createdParent = (newParent ? std::optional{DataNode{newParent, refs}} : std::nullopt),
@@ -44,7 +44,7 @@ CreatedNodes newPath2(lyd_node* node, ly_ctx* ctx, std::shared_ptr<internal_refc
 
 std::optional<DataNode> newExtPath(lyd_node* node, const lysc_ext_instance* ext, std::shared_ptr<internal_refcount> refs, const std::string& path, const std::optional<std::string>& value, const std::optional<CreationOptions> options)
 {
-    lyd_node* out;
+    lyd_node* out = NULL;
     auto err = lyd_new_ext_path(node, ext, path.c_str(), value ? value->c_str() : nullptr, options ? utils::toCreationOptions(*options) : 0, &out);
 
     throwIfError(err, "Couldn't create a node with path '"s + path + "'");

@@ -75,6 +75,8 @@ enum class PrintFlags : uint32_t {
     WithDefaultsAllTag = 0x40,
     WithDefaultsImplicitTag = 0x80,
     WithDefaultsMask = 0xF0,
+    Fragment = 0x100,
+    BareTopLeaf = 0x200,
 };
 
 /**
@@ -124,6 +126,7 @@ enum class CreationOptions : uint32_t {
     Opaque = 0x40,
     PathWithOpaque = 0x80,
     // LYD_NEW_ANY_USE_VALUE is not relevant
+    IgnoreInvalidValue = 0x200,
 };
 
 /**
@@ -258,6 +261,7 @@ enum class ValidationOptions {
  * Wraps LYD_PARSE_* flags.
  */
 enum class ParseOptions {
+    BareTopLeaf  = 0x1,
     ParseOnly    = 0x010000,
     Strict       = 0x020000,
     Opaque       = 0x040000,

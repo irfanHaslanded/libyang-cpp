@@ -130,6 +130,12 @@ public:
             const std::optional<ParseOptions> parseOpts = std::nullopt,
             const std::optional<ValidationOptions> validationOpts = std::nullopt);
 
+    std::optional<DataNode> parseData(
+        const std::string& data,
+        const DataFormat format,
+        const std::optional<ParseOptions> parseOpts = std::nullopt,
+        const std::optional<ValidationOptions> validationOpts = std::nullopt) const;
+
     bool isEqual(const libyang::DataNode& other, const DataCompare flags=DataCompare::NoOptions) const;
     bool siblingsEqual(const libyang::DataNode& other, const DataCompare flags=DataCompare::NoOptions) const;
 

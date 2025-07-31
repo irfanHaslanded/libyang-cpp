@@ -3,8 +3,7 @@
 #
 # Written by Václav Kubernát <kubernat@cesnet.cz>
 #
-
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.18)
 project(libyang-cpp LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 include(CTest)
@@ -12,7 +11,7 @@ include(GNUInstallDirs)
 
 if(NOT MSVC)
     set(CMAKE_CXX_FLAGS_DEBUG "-Werror ${CMAKE_CXX_FLAGS_DEBUG}")
-    set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -Woverloaded-virtual -Wimplicit-fallthrough -Wsuggest-override ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "-g -Wall -Wextra -pedantic -Woverloaded-virtual -Wimplicit-fallthrough -Wsuggest-override ${CMAKE_CXX_FLAGS}")
 endif()
 
 add_custom_target(libyang-cpp-version-cmake
@@ -20,7 +19,7 @@ add_custom_target(libyang-cpp-version-cmake
         cmake/ProjectGitVersionRunner.cmake
         )
 include(cmake/ProjectGitVersion.cmake)
-set(LIBYANG_CPP_PKG_VERSION "4")
+set(LIBYANG_CPP_PKG_VERSION "1.2.5")
 prepare_git_version(LIBYANG_CPP_VERSION ${LIBYANG_CPP_PKG_VERSION})
 
 find_package(Doxygen)
@@ -74,6 +73,8 @@ set_target_properties(yang-cpp PROPERTIES
     VERSION ${LIBYANG_CPP_PKG_VERSION}
     SOVERSION ${LIBYANG_CPP_PKG_VERSION})
 
+set_target_properties(yang-cpp PROPERTIES SOVERSION 3)
+
 include(GenerateExportHeader)
 generate_export_header(yang-cpp BASE_NAME libyang_cpp EXPORT_FILE_NAME libyang-cpp/export.h)
 
@@ -113,8 +114,9 @@ if(BUILD_TESTING)
             tests/${name}.cpp
             )
         target_link_libraries(test_${name} DoctestIntegration yang-cpp)
-
         add_test(test_${name} test_${name})
+        set_property(TEST test_${name} APPEND PROPERTY ENVIRONMENT
+            "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}")
     endfunction()
 
     libyang_cpp_test(context)

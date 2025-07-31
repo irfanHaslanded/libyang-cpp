@@ -42,6 +42,8 @@ static_assert(LYD_PRINT_WD_IMPL_TAG == toPrintFlags(PrintFlags::WithDefaultsImpl
 static_assert(LYD_PRINT_WD_MASK == toPrintFlags(PrintFlags::WithDefaultsMask));
 static_assert(LYD_PRINT_WD_TRIM == toPrintFlags(PrintFlags::WithDefaultsTrim));
 static_assert(LYD_PRINT_WITHSIBLINGS == toPrintFlags(PrintFlags::WithSiblings));
+static_assert(LYD_PRINT_FRAGMENT == toPrintFlags(PrintFlags::Fragment));
+static_assert(LYD_PRINT_BARETOPLEAF == toPrintFlags(PrintFlags::BareTopLeaf));
 
 #ifndef _MSC_VER
 // MSVC doesn't respect the underlying enum size
@@ -80,6 +82,7 @@ static_assert(LYD_NEW_META_CLEAR_DFLT == toCreationOptions(CreationOptions::Clea
 static_assert(LYD_NEW_PATH_UPDATE == toCreationOptions(CreationOptions::Update));
 static_assert(LYD_NEW_PATH_OPAQ == toCreationOptions(CreationOptions::Opaque));
 static_assert(LYD_NEW_PATH_WITH_OPAQ == toCreationOptions(CreationOptions::PathWithOpaque));
+static_assert(LYD_NEW_PATH_IGN_INVAL == toCreationOptions(CreationOptions::IgnoreInvalidValue));
 
 constexpr uint32_t toDuplicationOptions(const DuplicationOptions options)
 {
@@ -210,6 +213,7 @@ static_assert(toParseOptions(ParseOptions::Opaque) == LYD_PARSE_OPAQ);
 static_assert(toParseOptions(ParseOptions::NoState) == LYD_PARSE_NO_STATE);
 static_assert(toParseOptions(ParseOptions::LybModUpdate) == LYD_PARSE_LYB_MOD_UPDATE);
 static_assert(toParseOptions(ParseOptions::Ordered) == LYD_PARSE_ORDERED);
+static_assert(toParseOptions(ParseOptions::BareTopLeaf) == LYD_PARSE_BARETOPLEAF);
 
 constexpr lyd_type toOpType(const OperationType type)
 {

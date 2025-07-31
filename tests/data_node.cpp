@@ -2156,7 +2156,7 @@ TEST_CASE("Data Node manipulation")
         REQUIRE(node->newPath("ietf-restconf:error[1]/error-type", "protocol"));
         REQUIRE(node->newPath("ietf-restconf:error[1]/error-tag", "invalid-attribute"));
         REQUIRE(node->newExtPath(ext, "/ietf-restconf:errors/error[1]/error-message", "ahoj"));
-        REQUIRE_THROWS_WITH(node->newPath("ietf-restconf:error[1]/error-message", "duplicate create"), "Couldn't create a node with path 'ietf-restconf:error[1]/error-message': LY_EEXIST");
+        REQUIRE_THROWS_WITH(node->newPath("ietf-restconf:error[1]/error-message", "duplicate create"), "Path \"ietf-restconf:error[1]/error-message\" already exists. (Data location \"/ietf-restconf:errors/error[1]/error-message\".)");
         REQUIRE(*node->printStr(libyang::DataFormat::JSON, libyang::PrintFlags::WithSiblings | libyang::PrintFlags::KeepEmptyCont) == R"({
   "ietf-restconf:errors": {
     "error": [
@@ -2315,16 +2315,16 @@ TEST_CASE("Data Node manipulation")
 
         DOCTEST_SUBCASE("invalid notification") {
             REQUIRE_THROWS_WITH_AS(ctx.parseOp("", libyang::DataFormat::JSON, libyang::OperationType::NotificationRestconf),
-                    "Can't parse a standalone rpc/action/notification into operation data tree: LY_EVALID", libyang::Error);
+                    "Empty JSON file. (Line number 1.)", libyang::Error);
 
             REQUIRE_THROWS_WITH_AS(ctx.parseOp("{}", libyang::DataFormat::JSON, libyang::OperationType::NotificationRestconf),
-                    "Can't parse a standalone rpc/action/notification into operation data tree: LY_EVALID", libyang::Error);
+                    "Empty JSON object. (Line number 1.)", libyang::Error);
 
             REQUIRE_THROWS_WITH_AS(ctx.parseOp("", libyang::DataFormat::XML, libyang::OperationType::NotificationNetconf),
-                    "Can't parse a standalone rpc/action/notification into operation data tree: LY_ENOT", libyang::Error);
+                    "Missing NETCONF <notification> envelope or in incorrect namespace. (Line number 1.)", libyang::Error);
 
             REQUIRE_THROWS_WITH_AS(ctx.parseOp("asd", libyang::DataFormat::XML, libyang::OperationType::NotificationYang),
-                    "Can't parse a standalone rpc/action/notification into operation data tree: LY_EVALID", libyang::Error);
+                    "Invalid character sequence \"asd\", expected element tag start ('<'). (Line number 1.)", libyang::Error);
 
             /* libyang::setLogOptions(libyang::LogOptions::Log | libyang::LogOptions::Store); */
             REQUIRE_THROWS_WITH_AS(ctx.parseOp(R"(
@@ -2336,7 +2336,7 @@ TEST_CASE("Data Node manipulation")
                   }
                 }
             )", libyang::DataFormat::JSON, libyang::OperationType::NotificationRestconf),
-                    "Can't parse a standalone rpc/action/notification into operation data tree: LY_EVALID", libyang::Error);
+                    "No module named \"WTF\" in the context. (Line number 5.)", libyang::Error);
         }
 
         DOCTEST_SUBCASE("RESTCONF RPCs") {
@@ -2411,12 +2411,12 @@ TEST_CASE("Data Node manipulation")
 
             DOCTEST_SUBCASE("empty string") {
                 REQUIRE_THROWS_WITH_AS(rpcTree.parseOp("", libyang::DataFormat::JSON, libyang::OperationType::RpcRestconf),
-                        "Can't parse into operation data tree: LY_EVALID", libyang::Error);
+                        "Empty JSON file. (Line number 1.)", libyang::Error);
             }
 
             DOCTEST_SUBCASE("empty JSON") {
                 REQUIRE_THROWS_WITH_AS(rpcTree.parseOp("{}", libyang::DataFormat::JSON, libyang::OperationType::RpcRestconf),
-                        "Can't parse into operation data tree: LY_EVALID", libyang::Error);
+                        "Empty JSON object. (Line number 1.)", libyang::Error);
             }
 
             DOCTEST_SUBCASE("invalid data") {
@@ -2427,7 +2427,7 @@ TEST_CASE("Data Node manipulation")
                       }
                     }
                     )", libyang::DataFormat::JSON, libyang::OperationType::RpcRestconf),
-                        "Can't parse into operation data tree: LY_EVALID", libyang::Error);
+                        "Node \"WTF\" not found as a child of \"myRpc\" node. (Line number 4.)", libyang::Error);
             }
         }
     }

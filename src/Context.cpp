@@ -47,7 +47,7 @@ ly_ctx* retrieveContext(Context ctx)
  */
 Context::Context(const std::optional<std::filesystem::path>& searchPath, const std::optional<ContextOptions> options)
 {
-    ly_ctx* ctx;
+    ly_ctx* ctx = NULL;
     auto err = ly_ctx_new(searchPath ? PATH_TO_LY_STRING(*searchPath) : nullptr, options ? utils::toContextOptions(*options) : 0, &ctx);
     throwIfError(err, "Can't create libyang context");
 
@@ -96,7 +96,7 @@ std::vector<const char*> toCStringArray(const std::vector<std::string>& vec)
 Module Context::parseModule(const std::string& data, const SchemaFormat format, const std::vector<std::string>& features) const
 {
     auto in = wrap_ly_in_new_memory(data);
-    lys_module* mod;
+    lys_module* mod = NULL;
     auto err = lys_parse(m_ctx.get(), in.get(), utils::toLysInformat(format), toCStringArray(features).data(), &mod);
     throwIfError(err, "Can't parse module");
 
@@ -113,7 +113,7 @@ Module Context::parseModule(const std::string& data, const SchemaFormat format, 
 Module Context::parseModule(const std::filesystem::path& path, const SchemaFormat format, const std::vector<std::string>& features) const
 {
     auto in = wrap_ly_in_new_file(path);
-    lys_module* mod;
+    lys_module* mod = NULL;
     auto err = lys_parse(m_ctx.get(), in.get(), utils::toLysInformat(format), toCStringArray(features).data(), &mod);
     throwIfError(err, "Can't parse module");
 
@@ -132,7 +132,7 @@ std::optional<DataNode> Context::parseData(
         const std::optional<ParseOptions> parseOpts,
         const std::optional<ValidationOptions> validationOpts) const
 {
-    lyd_node* tree;
+    lyd_node* tree = NULL;
     auto err = lyd_parse_data_mem(
             m_ctx.get(),
             data.c_str(),
@@ -140,7 +140,7 @@ std::optional<DataNode> Context::parseData(
             parseOpts ? utils::toParseOptions(*parseOpts) : 0,
             validationOpts ? utils::toValidationOptions(*validationOpts) : 0,
             &tree);
-    throwIfError(err, "Can't parse data");
+    throwIfError2(m_ctx.get(), err, "Can't parse data");
 
 
     if (!tree) {
@@ -162,7 +162,7 @@ std::optional<DataNode> Context::parseData(
         const std::optional<ParseOptions> parseOpts,
         const std::optional<ValidationOptions> validationOpts) const
 {
-    lyd_node* tree;
+    lyd_node* tree = NULL;
     ly_log_level(LY_LLDBG);
     auto err = lyd_parse_data_path(
             m_ctx.get(),
@@ -171,7 +171,7 @@ std::optional<DataNode> Context::parseData(
             parseOpts ? utils::toParseOptions(*parseOpts) : 0,
             validationOpts ? utils::toValidationOptions(*validationOpts) : 0,
             &tree);
-    throwIfError(err, "Can't parse data");
+    throwIfError2(m_ctx.get(), err, "Can't parse data");
 
     if (!tree) {
         return std::nullopt;
@@ -262,7 +262,7 @@ ParsedOp Context::parseOp(const std::string& input, const DataFormat format, con
             res.op = op ? std::optional{libyang::wrapRawNode(op)} : std::nullopt;
         }
 
-        throwIfError(err, "Can't parse a standalone rpc/action/notification into operation data tree");
+        throwIfError2(m_ctx.get(), err, "Can't parse into operation data tree");
         return res;
     }
     case OperationType::ReplyNetconf:
@@ -387,7 +387,7 @@ std::optional<DataNode> Context::newOpaqueJSON(const OpaqueName& name, const std
     if (name.prefix && *name.prefix != name.moduleOrNamespace) {
         throw Error{"invalid opaque JSON node: prefix \"" + *name.prefix + "\" doesn't match module name \"" + name.moduleOrNamespace + "\""};
     }
-    lyd_node* out;
+    lyd_node* out = nullptr;
     auto err = lyd_new_opaq(nullptr,
                             m_ctx.get(),
                             name.name.c_str(),
@@ -463,7 +463,7 @@ SchemaNode Context::findPath(const std::string& dataPath, const InputOutputNodes
  */
 Set<SchemaNode> Context::findXPath(const std::string& path) const
 {
-    ly_set* set;
+    ly_set* set = NULL;
     auto err = lys_find_xpath(m_ctx.get(), nullptr, path.c_str(), 0, &set);
     throwIfError(err, "Context::findXPath: couldn't find node with path '"s + path + "'");
 
@@ -633,14 +633,16 @@ std::vector<ErrorInfo> Context::getErrors() const
 
     auto errIt = ly_err_first(m_ctx.get());
     while (errIt) {
+        auto path = errIt->data_path ? errIt->data_path : errIt->schema_path;
+        std::string location = errIt->data_path ? "Data location \"" : "Schema location \"";
+        std::string line = errIt->line ?
+                        " (Line number " + std::to_string(errIt->line) + " .)" : "";
         res.push_back(ErrorInfo{
             .appTag = errIt->apptag ? std::optional{errIt->apptag} : std::nullopt,
             .level = utils::toLogLevel(errIt->level),
             .message = errIt->msg,
             .code = static_cast<ErrorCode>(errIt->err),
-            .dataPath = errIt->data_path ? std::optional{errIt->data_path} : std::nullopt,
-            .schemaPath = errIt->schema_path ? std::optional{errIt->schema_path} : std::nullopt,
-            .line = errIt->line,
+            .path = path ? std::optional { location + path + "\"." + line} : std::nullopt,
             .validationCode = utils::toValidationErrorCode(errIt->vecode)
         });
 
@@ -659,4 +661,14 @@ void Context::cleanAllErrors()
 {
     ly_err_clean(m_ctx.get(), nullptr);
 }
+
+Set<SchemaNode> Context::findXpathAtoms(const std::string& xpath, uint32_t options) const {
+    ly_set* set = NULL;
+    auto err = lys_find_xpath_atoms(m_ctx.get(), nullptr, xpath.c_str(), options, &set);
+    throwIfError(err, "Context::findXpathAtoms: couldn't find atoms with xpath '"s + xpath + "'");
+
+    return Set<SchemaNode>{set, m_ctx};
+}
+
+
 }

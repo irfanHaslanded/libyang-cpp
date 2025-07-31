@@ -67,6 +67,26 @@ TEST_CASE("context")
 {
     std::optional<libyang::Context> ctx{std::in_place, std::nullopt, libyang::ContextOptions::NoYangLibrary | libyang::ContextOptions::DisableSearchCwd};
 
+    DOCTEST_SUBCASE("Context::findXpathAtoms success")
+    {
+        ctx->parseModule(example_schema, libyang::SchemaFormat::YANG);
+        auto data = ctx->parseData(TESTS_DIR / "test_data.json", libyang::DataFormat::JSON);
+        REQUIRE(data);
+        auto atoms = ctx->findXpathAtoms("/example-schema:leafInt8", 0);
+        REQUIRE(atoms.size() == 1);
+
+        atoms = ctx->findXpathAtoms("/example-schema:invalid_xpath", 0);
+        REQUIRE(atoms.size() == 0);
+    }
+
+    DOCTEST_SUBCASE("Context::findXpathAtoms failure")
+    {
+        ctx->parseModule(example_schema, libyang::SchemaFormat::YANG);
+        auto data = ctx->parseData(TESTS_DIR / "test_data.json", libyang::DataFormat::JSON);
+        REQUIRE(data);
+        REQUIRE_THROWS_AS(ctx->findXpathAtoms("", 0), std::runtime_error);
+    }
+
     DOCTEST_SUBCASE("parseModule")
     {
         std::string mod;
@@ -633,9 +653,7 @@ TEST_CASE("context")
                     .level = libyang::LogLevel::Error,
                     .message = "Invalid character sequence \"invalid\", expected a keyword.",
                     .code = libyang::ErrorCode::ValidationFailure,
-                    .dataPath = std::nullopt,
-                    .schemaPath = std::nullopt,
-                    .line = 1,
+                    .path = std::nullopt,
                     .validationCode = libyang::ValidationErrorCode::Syntax,
                 }
             };
@@ -654,9 +672,7 @@ TEST_CASE("context")
                         .level = libyang::LogLevel::Error,
                         .message = "Value \"9001\" is out of type int8 min/max bounds.",
                         .code = libyang::ErrorCode::ValidationFailure,
-                        .dataPath = std::nullopt,
-                        .schemaPath = "/example-schema:leafInt8",
-                        .line = 0,
+                        .path = "Schema location \"/example-schema:leafInt8\".",
                         .validationCode = libyang::ValidationErrorCode::Data,
                     }
                 };
@@ -671,9 +687,7 @@ TEST_CASE("context")
                         .level = libyang::LogLevel::Error,
                         .message = "Invalid type int8 empty value.",
                         .code = libyang::ErrorCode::ValidationFailure,
-                        .dataPath = std::nullopt,
-                        .schemaPath = "/example-schema:leafInt8",
-                        .line = 0,
+                        .path = "Schema location \"/example-schema:leafInt8\".",
                         .validationCode = libyang::ValidationErrorCode::Data,
                     },
                     libyang::ErrorInfo {
@@ -681,9 +695,7 @@ TEST_CASE("context")
                         .level = libyang::LogLevel::Error,
                         .message = "Value \"9001\" is out of type int8 min/max bounds.",
                         .code = libyang::ErrorCode::ValidationFailure,
-                        .dataPath = std::nullopt,
-                        .schemaPath = "/example-schema:leafInt8",
-                        .line = 0,
+                        .path = "Schema location \"/example-schema:leafInt8\".",
                         .validationCode = libyang::ValidationErrorCode::Data,
                     }
                 };

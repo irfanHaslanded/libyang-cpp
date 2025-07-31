@@ -69,9 +69,7 @@ struct LIBYANG_CPP_EXPORT ErrorInfo {
     LogLevel level;
     std::string message;
     ErrorCode code;
-    std::optional<std::string> dataPath;
-    std::optional<std::string> schemaPath;
-    uint64_t line;
+    std::optional<std::string> path;
     ValidationErrorCode validationCode;
 };
 
@@ -119,6 +117,7 @@ public:
     std::optional<DataNode> newOpaqueXML(const OpaqueName& name, const std::optional<libyang::XML>& value) const;
     SchemaNode findPath(const std::string& dataPath, const InputOutputNodes inputOutputNodes = InputOutputNodes::Input) const;
     Set<SchemaNode> findXPath(const std::string& path) const;
+    Set<SchemaNode> findXpathAtoms(const std::string& xpath, uint32_t options) const;
 
     std::vector<ErrorInfo> getErrors() const;
     void cleanAllErrors();

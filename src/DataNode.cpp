@@ -5,6 +5,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
 */
+#include <iostream>
 #include <algorithm>
 #include <cstring>
 #include <functional>
@@ -117,6 +118,8 @@ void DataNode::freeIfNoRefs()
         }
 
         lyd_free_all(m_node);
+        m_node = nullptr;
+        m_refs = nullptr;
     }
 }
 
@@ -192,7 +195,7 @@ std::optional<DataNode> DataNode::parent() const
  */
 std::optional<std::string> DataNode::printStr(const DataFormat format, const PrintFlags flags) const
 {
-    char* str;
+    char* str = NULL;
     std::optional<std::string> res;
     auto err = lyd_print_mem(&str, m_node, utils::toLydFormat(format), utils::toPrintFlags(flags));
     throwIfError(err, "DataNode::printStr");
@@ -217,7 +220,7 @@ std::optional<std::string> DataNode::printStr(const DataFormat format, const Pri
  */
 std::optional<DataNode> DataNode::findPath(const std::string& path, const InputOutputNodes inputOutputNodes) const
 {
-    lyd_node* node;
+    lyd_node* node = NULL;
     auto err = lyd_find_path(m_node, path.c_str(), inputOutputNodes == InputOutputNodes::Output ? true : false, &node);
 
     switch (err) {
@@ -396,6 +399,7 @@ ParsedOp DataNode::parseOp(const std::string& input, const DataFormat format, co
     auto in = wrap_ly_in_new_memory(input);
 
     switch (opType) {
+    case OperationType::RpcYang:
     case OperationType::ReplyNetconf:
     case OperationType::RpcRestconf:
     case OperationType::ReplyRestconf: {
@@ -406,8 +410,9 @@ ParsedOp DataNode::parseOp(const std::string& input, const DataFormat format, co
             .tree = tree ? std::optional{libyang::wrapRawNode(tree)} : std::nullopt,
             .op = op ? std::optional{libyang::wrapRawNode(op)} : std::nullopt
         };
-        throwIfError(err, "Can't parse into operation data tree");
+        throwIfError2(m_node->schema->module->ctx, err, "Can't parse into operation data tree");
         return res;
+        break;
     }
     case OperationType::RpcNetconf:
     case OperationType::NotificationNetconf:
@@ -490,12 +495,12 @@ bool isDescendantOrEqual(lyd_node* node, lyd_node* target)
  */
 DataNode DataNode::duplicate(const std::optional<DuplicationOptions> opts) const
 {
-    lyd_node* dup;
+    lyd_node* dup = NULL;
     auto ret = lyd_dup_single(m_node, nullptr, opts ? utils::toDuplicationOptions(*opts) : 0, &dup);
 
     throwIfError(ret, "DataNode::duplicate:");
 
-    return DataNode{dup, m_refs->context};
+    return DataNode{dup, m_refs ? m_refs->context : nullptr};
 }
 
 /**
@@ -506,12 +511,12 @@ DataNode DataNode::duplicate(const std::optional<DuplicationOptions> opts) const
  */
 DataNode DataNode::duplicateWithSiblings(const std::optional<DuplicationOptions> opts) const
 {
-    lyd_node* dup;
+    lyd_node* dup = NULL;
     auto ret = lyd_dup_siblings(m_node, nullptr, opts ? utils::toDuplicationOptions(*opts) : 0, &dup);
 
     throwIfError(ret, "DataNode::duplicateWithSiblings:");
 
-    return DataNode{dup, m_refs->context};
+    return DataNode{dup, m_refs ? m_refs->context : nullptr};
 }
 
 enum class OperationScope {
@@ -706,9 +711,10 @@ void DataNode::insertChild(DataNode toInsert)
  */
 DataNode DataNode::insertSibling(DataNode toInsert)
 {
-    lyd_node* firstSibling;
+    lyd_node* firstSibling = NULL;
     handleLyTreeOperation(&toInsert, [this, &toInsert, &firstSibling] {
-        lyd_insert_sibling(this->m_node, toInsert.m_node, &firstSibling);
+        auto ret = lyd_insert_sibling(this->m_node, toInsert.m_node, &firstSibling);
+	    throwIfError2(m_refs ? m_refs->context.get() : nullptr, ret, "Can't insert sibling");
     }, toInsert.parent() ? OperationScope::JustThisNode : OperationScope::AffectsFollowingSiblings, m_refs);
 
     return DataNode{firstSibling, m_refs};
@@ -722,7 +728,8 @@ DataNode DataNode::insertSibling(DataNode toInsert)
 void DataNode::insertAfter(DataNode toInsert)
 {
     handleLyTreeOperation(&toInsert, [this, &toInsert] {
-        lyd_insert_after(this->m_node, toInsert.m_node);
+        auto ret = lyd_insert_after(this->m_node, toInsert.m_node);
+	    throwIfError2(m_refs ? m_refs->context.get() : nullptr, ret, "Can't insert after");
     }, OperationScope::JustThisNode, m_refs);
 }
 
@@ -734,7 +741,8 @@ void DataNode::insertAfter(DataNode toInsert)
 void DataNode::insertBefore(DataNode toInsert)
 {
     handleLyTreeOperation(&toInsert, [this, &toInsert] {
-        lyd_insert_before(this->m_node, toInsert.m_node);
+        auto ret = lyd_insert_before(this->m_node, toInsert.m_node);
+	    throwIfError2(m_refs ? m_refs->context.get() : nullptr, ret, "Can't insert before");
     }, OperationScope::JustThisNode, m_refs);
 }
 
@@ -1052,7 +1060,7 @@ void DataNode::newAttrOpaqueJSON(const std::optional<std::string>& moduleName, c
  */
 Set<DataNode> DataNode::findXPath(const std::string& xpath) const
 {
-    ly_set* set;
+    ly_set* set = NULL;
     auto ret = lyd_find_xpath(m_node, xpath.c_str(), &set);
 
     throwIfError(ret, "DataNode::findXPath:");
@@ -1073,7 +1081,7 @@ Set<DataNode> DataNode::findXPath(const std::string& xpath) const
  */
 std::optional<DataNode> DataNode::findSiblingVal(SchemaNode schema, const std::optional<std::string>& value) const
 {
-    lyd_node* node;
+    lyd_node* node = NULL;
     auto ret = lyd_find_sibling_val(m_node, schema.m_node, value ? value->c_str() : nullptr, 0, &node);
 
     switch (ret) {
@@ -1239,7 +1247,7 @@ Set<DataNode> findXPathAt(
         const libyang::DataNode& forest,
         const std::string& xpath)
 {
-    ly_set* set;
+    ly_set* set = nullptr;
     auto ret = lyd_find_xpath3(contextNode ? contextNode->m_node : nullptr, forest.m_node, xpath.c_str(),
             LY_VALUE_JSON, nullptr, nullptr, &set);
 
@@ -1354,4 +1362,36 @@ std::optional<DataNodeOpaque> DataNode::firstOpaqueSibling() const
     return std::nullopt;
 }
 
+std::optional<DataNode> DataNode::parseData(
+        const std::string& data,
+        const DataFormat format,
+        const std::optional<ParseOptions> parseOpts,
+        const std::optional<ValidationOptions> validationOpts) const
+{
+    ly_in* in = NULL;
+    ly_in_new_memory(data.c_str(), &in);
+    auto deleteFunc = [](auto* in) {
+        ly_in_free(in, false);
+    };
+    auto deleter = std::unique_ptr<ly_in, decltype(deleteFunc)>(in, deleteFunc);
+
+    lyd_node* tree = nullptr;
+
+    auto err = lyd_parse_data(
+            m_refs->context.get(),
+            m_node,
+            in,
+            utils::toLydFormat(format),
+            parseOpts ? utils::toParseOptions(*parseOpts) : 0,
+            validationOpts ? utils::toValidationOptions(*validationOpts) : 0,
+            &tree);
+    throwIfError2(m_refs->context.get(), err, "Can't parse data");
+
+    if (!tree) {
+        return std::nullopt;
+    }
+
+    return DataNode{tree, m_refs};
 }
+
+} /* end of namespace libyang */
