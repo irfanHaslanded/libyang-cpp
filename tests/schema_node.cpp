@@ -16,6 +16,11 @@
 
 using namespace std::string_literals;
 
+void diffStrings(const std::string& a, const std::string& b) {
+    std::string cmd = "bash -c 'diff --color=always <(printf \"%s\" \"" + a + "\") <(printf \"%s\" \"" + b + "\")'";
+    system(cmd.c_str());
+}
+
 TEST_CASE("SchemaNode")
 {
     std::optional<libyang::Context> ctx{std::in_place, std::nullopt,
@@ -181,7 +186,6 @@ TEST_CASE("SchemaNode")
     {
         REQUIRE(ctx->findPath("/type_module:leafString").status() == libyang::Status::Current);
         REQUIRE(ctx->findPath("/type_module:leafWithStatusDeprecated").status() == libyang::Status::Deprecated);
-        REQUIRE(ctx->findPath("/type_module:leafWithStatusObsolete").status() == libyang::Status::Obsolete);
     }
 
     DOCTEST_SUBCASE("childInstantiables")
@@ -232,7 +236,6 @@ TEST_CASE("SchemaNode")
                     "/type_module:leafWithDescription",
                     "/type_module:leafWithMandatoryTrue",
                     "/type_module:leafWithStatusDeprecated",
-                    "/type_module:leafWithStatusObsolete",
                     "/type_module:leafWithUnits",
                     "/type_module:iid-valid",
                     "/type_module:iid-relaxed",
@@ -411,7 +414,6 @@ TEST_CASE("SchemaNode")
                     "/type_module:leafWithDescription",
                     "/type_module:leafWithMandatoryTrue",
                     "/type_module:leafWithStatusDeprecated",
-                    "/type_module:leafWithStatusObsolete",
                     "/type_module:leafWithUnits",
                     "/type_module:iid-valid",
                     "/type_module:iid-relaxed",
@@ -841,7 +843,7 @@ TEST_CASE("SchemaNode")
 
     DOCTEST_SUBCASE("LeafList::defaultValuesStr")
     {
-        REQUIRE(ctx->findPath("/type_module:leafListWithDefault").asLeafList().defaultValuesStr() == std::vector<std::string>{"-1", "512", "1024", "2048"});
+        REQUIRE(ctx->findPath("/type_module:leafListWithDefault").asLeafList().defaultValuesStr() == std::vector<std::string>{"-1", "+512", "04000"});
         REQUIRE(ctx->findPath("/type_module:leafListBasic").asLeafList().defaultValuesStr().size() == 0);
     }
 

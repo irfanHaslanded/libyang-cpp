@@ -90,6 +90,13 @@ public:
     DataNodeTerm asTerm() const;
     DataNodeAny asAny() const;
     SchemaNode schema() const;
+
+    std::optional<DataNode> parseData(
+            const std::string& data,
+            const DataFormat format,
+            const std::optional<ParseOptions> parseOpts = std::nullopt,
+            const std::optional<ValidationOptions> validationOpts = std::nullopt) const;
+
     std::optional<DataNode> newPath(const std::string& path, const std::optional<std::string>& value = std::nullopt, const std::optional<CreationOptions> options = std::nullopt) const;
     CreatedNodes newPath2(const std::string& path, const std::optional<std::string>& value = std::nullopt, const std::optional<CreationOptions> options = std::nullopt) const;
     CreatedNodes newPath2(const std::string& path, libyang::JSON json, const std::optional<CreationOptions> options = std::nullopt) const;
@@ -129,12 +136,6 @@ public:
             const DataFormat format,
             const std::optional<ParseOptions> parseOpts = std::nullopt,
             const std::optional<ValidationOptions> validationOpts = std::nullopt);
-
-    std::optional<DataNode> parseData(
-        const std::string& data,
-        const DataFormat format,
-        const std::optional<ParseOptions> parseOpts = std::nullopt,
-        const std::optional<ValidationOptions> validationOpts = std::nullopt) const;
 
     bool isEqual(const libyang::DataNode& other, const DataCompare flags=DataCompare::NoOptions) const;
     bool siblingsEqual(const libyang::DataNode& other, const DataCompare flags=DataCompare::NoOptions) const;

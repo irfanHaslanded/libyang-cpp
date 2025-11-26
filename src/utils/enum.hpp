@@ -33,7 +33,7 @@ constexpr uint32_t toPrintFlags(const PrintFlags flags)
 }
 // These tests ensure that I used the right numbers when defining my enum.
 // TODO: add asserts for operator|(PrintFlags, PrintFlags)
-static_assert(LYD_PRINT_KEEPEMPTYCONT == toPrintFlags(PrintFlags::KeepEmptyCont));
+static_assert(LYD_PRINT_EMPTY_CONT == toPrintFlags(PrintFlags::KeepEmptyCont));
 static_assert(LYD_PRINT_SHRINK == toPrintFlags(PrintFlags::Shrink));
 static_assert(LYD_PRINT_WD_ALL == toPrintFlags(PrintFlags::WithDefaultsAll));
 static_assert(LYD_PRINT_WD_ALL_TAG == toPrintFlags(PrintFlags::WithDefaultsAllTag));
@@ -41,9 +41,7 @@ static_assert(LYD_PRINT_WD_EXPLICIT == toPrintFlags(PrintFlags::WithDefaultsExpl
 static_assert(LYD_PRINT_WD_IMPL_TAG == toPrintFlags(PrintFlags::WithDefaultsImplicitTag));
 static_assert(LYD_PRINT_WD_MASK == toPrintFlags(PrintFlags::WithDefaultsMask));
 static_assert(LYD_PRINT_WD_TRIM == toPrintFlags(PrintFlags::WithDefaultsTrim));
-static_assert(LYD_PRINT_WITHSIBLINGS == toPrintFlags(PrintFlags::WithSiblings));
-static_assert(LYD_PRINT_FRAGMENT == toPrintFlags(PrintFlags::Fragment));
-static_assert(LYD_PRINT_BARETOPLEAF == toPrintFlags(PrintFlags::BareTopLeaf));
+static_assert(LYD_PRINT_SIBLINGS == toPrintFlags(PrintFlags::WithSiblings));
 
 #ifndef _MSC_VER
 // MSVC doesn't respect the underlying enum size
@@ -211,9 +209,8 @@ static_assert(toParseOptions(ParseOptions::ParseOnly) == LYD_PARSE_ONLY);
 static_assert(toParseOptions(ParseOptions::Strict) == LYD_PARSE_STRICT);
 static_assert(toParseOptions(ParseOptions::Opaque) == LYD_PARSE_OPAQ);
 static_assert(toParseOptions(ParseOptions::NoState) == LYD_PARSE_NO_STATE);
-static_assert(toParseOptions(ParseOptions::LybModUpdate) == LYD_PARSE_LYB_MOD_UPDATE);
 static_assert(toParseOptions(ParseOptions::Ordered) == LYD_PARSE_ORDERED);
-static_assert(toParseOptions(ParseOptions::BareTopLeaf) == LYD_PARSE_BARETOPLEAF);
+static_assert(toParseOptions(ParseOptions::SkipCtxCheck) == LYD_PARSE_LYB_SKIP_CTX_CHECK);
 
 constexpr lyd_type toOpType(const OperationType type)
 {
@@ -246,7 +243,6 @@ static_assert(toAnydataValueType(AnydataValueType::DataTree) == LYD_ANYDATA_DATA
 static_assert(toAnydataValueType(AnydataValueType::String) == LYD_ANYDATA_STRING);
 static_assert(toAnydataValueType(AnydataValueType::XML) == LYD_ANYDATA_XML);
 static_assert(toAnydataValueType(AnydataValueType::JSON) == LYD_ANYDATA_JSON);
-static_assert(toAnydataValueType(AnydataValueType::LYB) == LYD_ANYDATA_LYB);
 
 constexpr LYS_OUTFORMAT toLysOutFormat(const SchemaOutputFormat format)
 {

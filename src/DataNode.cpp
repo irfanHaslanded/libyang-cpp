@@ -405,7 +405,7 @@ ParsedOp DataNode::parseOp(const std::string& input, const DataFormat format, co
     case OperationType::ReplyRestconf: {
         lyd_node* op = nullptr;
         lyd_node* tree = nullptr;
-        auto err = lyd_parse_op(m_node->schema->module->ctx, m_node, in.get(), utils::toLydFormat(format), utils::toOpType(opType), &tree, nullptr);
+        auto err = lyd_parse_op(m_node->schema->module->ctx, m_node, in.get(), utils::toLydFormat(format), utils::toOpType(opType), LYD_PARSE_STRICT, &tree, nullptr);
         ParsedOp res{
             .tree = tree ? std::optional{libyang::wrapRawNode(tree)} : std::nullopt,
             .op = op ? std::optional{libyang::wrapRawNode(op)} : std::nullopt

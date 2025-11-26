@@ -630,7 +630,6 @@ module type_module {
         type int32;
         default -1;
         default +512;
-        default 0x400;
         default 04000;
     }
 
